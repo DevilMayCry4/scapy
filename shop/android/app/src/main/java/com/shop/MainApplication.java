@@ -1,6 +1,7 @@
 package com.shop;
 
 import android.app.Application;
+import android.support.annotation.Nullable;
 
 import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactNativeHost;
@@ -12,7 +13,9 @@ import com.reactnativenavigation.NavigationApplication;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class MainApplication extends NavigationApplication  {
+
+
+public  class MainApplication extends NavigationApplication   {
 
   private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
     @Override
@@ -20,14 +23,8 @@ public abstract class MainApplication extends NavigationApplication  {
       return BuildConfig.DEBUG;
     }
 
-
-      public boolean isDebug() {
-          // Make sure you are using BuildConfig from your own application
-          return BuildConfig.DEBUG;
-      }
-
-    @Override
-    protected List<ReactPackage> getPackages() {
+      @Override
+      public List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage()
       );
@@ -39,19 +36,25 @@ public abstract class MainApplication extends NavigationApplication  {
     }
   };
 
-  @Override
-     public List<ReactPackage> createAdditionalReactPackages() {
-      return Arrays.<ReactPackage>asList(
-              new MainReactPackage()
-      );
-     }
+
 
     @Override
   public ReactNativeHost getReactNativeHost() {
     return mReactNativeHost;
   }
 
-  @Override
+    @Override
+    public boolean isDebug() {
+        return BuildConfig.DEBUG;
+    }
+
+    @Nullable
+    @Override
+    public List<ReactPackage> createAdditionalReactPackages() {
+        mReactNativeHost.getPackages();
+    }
+
+    @Override
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);

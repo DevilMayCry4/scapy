@@ -5,15 +5,34 @@ import os
 import sys
 import json
 from urllib import parse
-from pw.items import PwItem,StarItem
+from  items import PwItem,StarItem,GenreItem
 
 headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'}
 
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
-        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+        #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
         # yield scrapy.Request(url='https://www.javbus.com/MDB-801',headers=headers,callback=self.parse)
+        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+
+    def parseGenre(self,response):
+        list = response.xpath(".//div[@class='row genre-box']")
+
+        for l in list:
+           x = l.xpath(".//a")
+           for t in x:
+               j = t.xpath(".//@href")[0]
+               gener = j.extract().replace('https://www.javbus.com/genre/','')
+               v = t.xpath(".//text()")[0].extract()
+               item = GenreItem()
+               item["name"] = v
+               item["genre"] = gener
+               yield item
+
+
+
+
 
 
     def parseAtress(self,response):

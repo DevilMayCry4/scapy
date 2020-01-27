@@ -46,3 +46,9 @@ class StarItem(scrapy.Item):
     code = scrapy.Field()
     cup = scrapy.Field()
 
+
+class GenreItem(scrapy.Item):
+    name = scrapy.Field()
+    genre = scrapy.Field()
+
+

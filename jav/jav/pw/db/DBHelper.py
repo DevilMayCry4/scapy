@@ -32,7 +32,7 @@ class DBHelper():
     def insert(self, item):
         sql = "insert into av(name,imageUrl,genreName," \
               "genre,star,starName," \
-              "number,studio,series,seriesName,image,time,date) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+              "number,studio,series,seriesName,image,time,date,link) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         #调用插入的方法
         query = self.dbpool.runInteraction(self._conditional_insert, sql, item)
         #调用异常处理方法
@@ -44,7 +44,7 @@ class DBHelper():
     def _conditional_insert(self, tx, sql, item):
         params = (item["name"], item['imageUrl'], item['genreName'],
                   item['genre'], item['star'], item['starName'],
-                  item['number'],item['studio'],item['series'],item['seriesName'],item['image'],item['time'],item['date'])
+                  item['number'],item['studio'],item['series'],item['seriesName'],item['image'],item['time'],item['date'],item['link'])
         tx.execute(sql, params)
 
 
@@ -68,4 +68,17 @@ class DBHelper():
         params = (item["name"], item['imageUrl'], item['image'],
                   item['xiongwei'], item['yaowei'], item['height'],
                   item['tunwei'], item['birth'], item['code'],item['cup'])
+        tx.execute(sql, params)
+
+    def inserGenreItem(self,item):
+        sql = "insert into genre(name,genre) values(%s,%s)"
+        # 调用插入的方法
+        query = self.dbpool.runInteraction(self.genreConditionalInsert, sql, item)
+        # 调用异常处理方法
+        query.addErrback(self._handle_error)
+
+        return item
+
+    def genreConditionalInsert(self, tx, sql, item):
+        params = (item["name"], item['genre'])
         tx.execute(sql, params)

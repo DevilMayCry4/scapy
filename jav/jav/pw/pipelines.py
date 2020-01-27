@@ -5,16 +5,18 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
-from scrapy.pipelines.images import ImagesPipeline
+# from scrapy.pipelines.images import ImagesPipeline
 from scrapy import Request
 from scrapy.exceptions import DropItem
-from pw.items import PwItem
-from pw.db.DBHelper import DBHelper
+from items import PwItem
+from db.DBHelper import DBHelper
+
+from  items import PwItem,StarItem,GenreItem
 
 
 db = DBHelper()
 
-class PwImagePipeline(ImagesPipeline):
+class PwImagePipeline():
 
 
 
@@ -26,15 +28,15 @@ class PwImagePipeline(ImagesPipeline):
         image_paths = [x['path'] for ok, x in results if ok]
         if not image_paths:
             item['image'] = ''
-            if isinstance(item,PwItem):
-                db.insert(item)
+            if isinstance(item,GenreItem):
+                db.inserGenreItem(item)
             else:
                 db.insertStarItem(item)
         else:
            item['image'] = image_paths[0]
            # 插入数据库
-           if isinstance(item, PwItem):
-                db.insert(item)
+           if isinstance(item, GenreItem):
+                db.inserGenreItem(item)
            else:
                 db.insertStarItem(item)
         return item
@@ -45,7 +47,8 @@ class PwPipeline(object):
 
 
     def process_item(self, item, spider):
-        return item
+        if isinstance(item, GenreItem):
+            db.inserGenreItem(item)
 
 
 

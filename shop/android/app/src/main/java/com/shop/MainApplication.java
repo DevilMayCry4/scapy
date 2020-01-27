@@ -9,6 +9,7 @@ import com.facebook.react.ReactPackage;
 import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.reactnativenavigation.NavigationApplication;
+import com.reactnativenavigation.react.NavigationReactGateway;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.List;
 
 
 public  class MainApplication extends NavigationApplication   {
+
+    private List packages;
 
   private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
     @Override
@@ -25,9 +28,7 @@ public  class MainApplication extends NavigationApplication   {
 
       @Override
       public List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-          new MainReactPackage()
-      );
+          return packages;
     }
 
     @Override
@@ -35,8 +36,6 @@ public  class MainApplication extends NavigationApplication   {
       return "index";
     }
   };
-
-
 
     @Override
   public ReactNativeHost getReactNativeHost() {
@@ -51,7 +50,16 @@ public  class MainApplication extends NavigationApplication   {
     @Nullable
     @Override
     public List<ReactPackage> createAdditionalReactPackages() {
-        mReactNativeHost.getPackages();
+       return this.getPackages();
+    }
+
+    private  List<ReactPackage> getPackages() {
+        if (packages == null) {
+            packages = Arrays.<ReactPackage>asList(
+                    new MainReactPackage()
+            );
+        }
+        return packages;
     }
 
     @Override

@@ -65,8 +65,8 @@ DOWNLOAD_DELAY = 1
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   # 'pw.pipelines.PwImagePipeline':300,
-   'pw.pipelines.PwPipeline': 300
+    'pw.pipelines.PwImagePipeline':300,
+   #'pw.pipelines.PwPipeline': 300
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

@@ -51,4 +51,8 @@ class GenreItem(scrapy.Item):
     name = scrapy.Field()
     genre = scrapy.Field()
 
+class LinkItem(scrapy.Item):
+    number = scrapy.Field()
+    link = scrapy.Field()
+
 

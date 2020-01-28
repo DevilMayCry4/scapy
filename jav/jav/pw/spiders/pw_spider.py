@@ -5,15 +5,18 @@ import os
 import sys
 import json
 from urllib import parse
-from  items import PwItem,StarItem,GenreItem
+from  items import PwItem,StarItem,GenreItem,LinkItem
 
+#existmag 有链接 mag ，所有all
+
+magkey = 'all'
 headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'}
 
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
         #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
-        # yield scrapy.Request(url='https://www.javbus.com/MDB-801',headers=headers,callback=self.parse)
+        #yield scrapy.Request(url='https://www.javbus.com/MDB-801',headers=headers,callback=self.parse)
         yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
 
     def parseGenre(self,response):
@@ -32,21 +35,18 @@ class PWSpider(scrapy.Spider):
 
 
 
-
-
-
     def parseAtress(self,response):
         list = response.xpath('//*[@id="waterfall"]')[0].xpath('./div')
         for div in list:
             a = div.xpath(".//a/@href")
             if len(a) > 0:
                 href = a[0].extract()
-                yield scrapy.Request(url=href, headers=headers,cookies={'existmag':'all'}, callback=self.parseStar)
+                yield scrapy.Request(url=href, headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar)
         if len(response.xpath("//*[@id='next']")):
               link = response.xpath("//a[@id='next']")
               if len(link) > 0:
                  url = response.urljoin(link[0].xpath("./@href")[0].extract())
-                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'all'}, callback=self.parseAtress)
+                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'mag'}, callback=self.parseAtress)
         else:
             ul = response.xpath(".//ul[@class='pagination pagination-lg']")
             findActive = False
@@ -60,7 +60,7 @@ class PWSpider(scrapy.Spider):
                         continue
                     elif findActive:
                         pageUlr = response.urljoin(li.xpath("./a/@href")[0].extract())
-                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'all'},
+                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
                                              callback=self.parseAtress)
 
     def parseStar(self,response):
@@ -99,7 +99,7 @@ class PWSpider(scrapy.Spider):
               link = response.xpath("//a[@id='next']")
               if len(link) > 0:
                  url = response.urljoin(link[0].xpath("./@href")[0].extract())
-                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'all'}, callback=self.parseStar)
+                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar)
         else:
             ul = response.xpath(".//ul[@class='pagination pagination-lg']")
             findActive = False
@@ -113,9 +113,8 @@ class PWSpider(scrapy.Spider):
                         continue
                     elif findActive:
                         pageUlr = response.urljoin(li.xpath("./a/@href")[0].extract())
-                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'all'},
+                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
                                              callback=self.parseStar)
-
 
     def parse(self, response):
         containers = response.xpath("//div[@class='container']")
@@ -165,9 +164,9 @@ class PWSpider(scrapy.Spider):
 
 
             for p in ps:
-                headers =  p.xpath('.//span[1]/text()')
-                if len(headers) > 0:
-                    header = headers[0].extract()
+                Pheaders =  p.xpath('.//span[1]/text()')
+                if len(Pheaders) > 0:
+                    header = Pheaders[0].extract()
                     for key in keys.keys():
                         if header.find(keys[key]) != -1:
                            a =  p.xpath('.//a[1]')
@@ -186,6 +185,9 @@ class PWSpider(scrapy.Spider):
                                    v = p.xpath("./text()")[0].extract()
                                    if len(v) != 0 and v != ':':
                                        item[key] = v
+            number = item['number']
+            linkUlr = 'https://u3c3.com/?search='+number
+            yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
             yield item
 
 
@@ -196,7 +198,7 @@ class PWSpider(scrapy.Spider):
               link = response.xpath("//a[@id='next']")
               if len(link) > 0:
                  url = response.urljoin(link[0].xpath("./@href")[0].extract())
-                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'all'}, callback=block)
+                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'mag'}, callback=block)
         else:
             ul = response.xpath(".//ul[@class='pagination pagination-lg']")
             findActive = False
@@ -210,7 +212,7 @@ class PWSpider(scrapy.Spider):
                         continue
                     elif findActive:
                         pageUlr = response.urljoin(li.xpath("./a/@href")[0].extract())
-                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'all'},
+                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
                                              callback=block)
 
 
@@ -236,3 +238,42 @@ class PWSpider(scrapy.Spider):
         with open(path, 'r',encoding='utf-8') as f:
             item = json.loads(f.read())
         return item
+
+
+#magnet 解析 https://u3c3.com/?search=
+    def parseLink(self,response):
+        item = LinkItem()
+        item['link']=''
+        number = response.meta['number']
+        magents = response.xpath("//a/@href")
+        item['number'] = number
+        for magent in magents:
+            href = magent.extract()
+            if  href.find('magnet:?xt') != -1:
+                item['link'] = href
+                yield item
+                return
+        url = 'https://m.dongxingdi.com/list/'+number+'/1'
+        yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseZhongziLink,
+                                 meta={'number': number})
+
+
+
+
+
+# magnet 解析  https://m.dongxingdi.com/list/xx/1
+    def parseZhongziLink(self,response):
+        item = LinkItem()
+        item['link'] = ''
+        number = response.meta['number']
+        magents = response.xpath("//a/@href")
+        item['number'] = number
+        for magent in magents:
+            href = magent.extract()
+            key = '/info-'
+            if href.find(key) != -1:
+                item['link'] = 'magnet:?xt=urn:btih:' +  href.replace(key,'')
+                yield item
+                return
+        yield item
+

@@ -9,7 +9,7 @@ from  items import PwItem,StarItem,GenreItem,LinkItem
 
 #existmag 有链接 mag ，所有all
 
-AtressIndex = 0
+PageCount = 0
 magkey = 'all'
 headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'}
 
@@ -18,7 +18,10 @@ class PWSpider(scrapy.Spider):
     def start_requests(self):
         #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
         #yield scrapy.Request(url='https://www.javbus.com/SSNI-382',headers=headers,callback=self.parse)
-        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+        #解析演员
+       # yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+        #解析列表
+        yield scrapy.Request(url='https://www.javbus.com', headers=headers, callback=self.parseContent)
 
     def parseGenre(self,response):
         list = response.xpath(".//div[@class='row genre-box']")
@@ -37,10 +40,10 @@ class PWSpider(scrapy.Spider):
 
 
     def parseAtress(self,response):
-        global AtressIndex
-        if AtressIndex >= 5600:
+        global PageCount
+        if PageCount >= 5600:
             return
-        AtressIndex = AtressIndex + 1
+        PageCount = PageCount + 1
         list = response.xpath('//*[@id="waterfall"]')[0].xpath('./div')
         for div in list:
             a = div.xpath(".//a/@href")
@@ -244,6 +247,40 @@ class PWSpider(scrapy.Spider):
             item = json.loads(f.read())
         return item
 
+
+#解析最新内容
+    def parseContent(self,response):
+        global PageCount
+        if PageCount >= 200:
+            return
+        PageCount += 1
+        waterfall = response.xpath('//*[@id="waterfall"]')[1]
+        list = waterfall.xpath('./div')
+        for div in list:
+            a = div.xpath(".//a/@href")
+            if len(a) > 0:
+                href = a[0].extract()
+                yield scrapy.Request(url=href, headers=headers, callback=self.parse)
+        if len(response.xpath("//*[@id='next']")):
+            link = response.xpath("//a[@id='next']")
+            if len(link) > 0:
+                url = response.urljoin(link[0].xpath("./@href")[0].extract())
+                yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseContent)
+        else:
+            ul = response.xpath(".//ul[@class='pagination pagination-lg']")
+            findActive = False
+            if len(ul) > 0:
+                lis = ul[0].xpath('.//li')
+                for li in lis:
+                    if li.extract().find('上一頁') != -1:
+                        continue
+                    elif len(li.xpath("@class")) > 0:
+                        findActive = True
+                        continue
+                    elif findActive:
+                        pageUlr = response.urljoin(li.xpath("./a/@href")[0].extract())
+                        yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
+                                             callback=self.parseContent)
 
 #magnet 解析 https://u3c3.com/?search=
     def parseLink(self,response):

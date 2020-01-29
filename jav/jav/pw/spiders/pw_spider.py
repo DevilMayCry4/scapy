@@ -9,6 +9,7 @@ from  items import PwItem,StarItem,GenreItem,LinkItem
 
 #existmag 有链接 mag ，所有all
 
+AtressIndex = 0
 magkey = 'all'
 headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'}
 
@@ -16,7 +17,7 @@ class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
         #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
-        #yield scrapy.Request(url='https://www.javbus.com/MDB-801',headers=headers,callback=self.parse)
+        #yield scrapy.Request(url='https://www.javbus.com/SSNI-382',headers=headers,callback=self.parse)
         yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
 
     def parseGenre(self,response):
@@ -36,6 +37,10 @@ class PWSpider(scrapy.Spider):
 
 
     def parseAtress(self,response):
+        global AtressIndex
+        if AtressIndex >= 5600:
+            return
+        AtressIndex = AtressIndex + 1
         list = response.xpath('//*[@id="waterfall"]')[0].xpath('./div')
         for div in list:
             a = div.xpath(".//a/@href")

@@ -54,5 +54,7 @@ class GenreItem(scrapy.Item):
 class LinkItem(scrapy.Item):
     number = scrapy.Field()
     link = scrapy.Field()
+    domain = scrapy.Field()
+    point = scrapy.Field()
 
 

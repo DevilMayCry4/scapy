@@ -6,22 +6,29 @@ import sys
 import json
 from urllib import parse
 from  items import PwItem,StarItem,GenreItem,LinkItem
+from db.DBHelper import DBHelper
 
 #existmag 有链接 mag ，所有all
 
 PageCount = 0
 magkey = 'all'
 headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'}
+ChineseHDPoint = 2
+ChinesePoint = 1.5
+HDPoint = 1.2
 
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
         #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
-        #yield scrapy.Request(url='https://www.javbus.com/SSNI-382',headers=headers,callback=self.parse)
+      # yield scrapy.Request(url='https://www.javbus.com/DOKS-506',headers=headers,callback=self.parse)
         #解析演员
-       # yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+       yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
         #解析列表
-        yield scrapy.Request(url='https://www.javbus.com', headers=headers, callback=self.parseContent)
+        #yield scrapy.Request(url='https://www.javbus.com', headers=headers, callback=self.parseContent)
+        #yield  scrapy.Request(url='https://www.javbus.com/star/tyv', headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar)
+
+        #yield scrapy.Request(url='https://torrentz2.eu/search?f=NDRA-067', headers=headers, callback=self.parseTorrent ,meta={'number': 'NDRA-067'})
 
     def parseGenre(self,response):
         list = response.xpath(".//div[@class='row genre-box']")
@@ -194,8 +201,8 @@ class PWSpider(scrapy.Spider):
                                    if len(v) != 0 and v != ':':
                                        item[key] = v
             number = item['number']
-            linkUlr = 'https://u3c3.com/?search='+number
-            yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
+            linkUlr = 'https://torrentz2.eu/search?f='+number
+            yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseTorrent,meta={'number':number})
             yield item
 
 
@@ -282,40 +289,76 @@ class PWSpider(scrapy.Spider):
                         yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
                                              callback=self.parseContent)
 
+#中文1.5 HD-FHD 1.4
 #magnet 解析 https://u3c3.com/?search=
     def parseLink(self,response):
         item = LinkItem()
         item['link']=''
+        item['domain'] = 'u3c3'
         number = response.meta['number']
-        magents = response.xpath("//a/@href")
-        item['number'] = number
-        for magent in magents:
-            href = magent.extract()
-            if  href.find('magnet:?xt') != -1:
-                item['link'] = href
-                yield item
-                return
+        tbody = response.xpath("//tbody")
+        trs = tbody.xpath("//tr")
+        point = 1
+        link = ''
+        for tr in trs:
+            links = tr.xpath(".//td[3]//a[2]")
+            if len(links) > 0:
+                if tr.extract().find('中文') != -1 or tr.extract().find('HD') != -1:
+                    tmpLink = tr.xpath(".//td[3]//a[2]")[0]
+                    if(tr.extract().find('中文') != -1) and point < ChinesePoint:
+                          point = ChinesePoint
+                          link = tmpLink
+                    if (tr.extract().find('HD') != -1) and point < HDPoint:
+                        point = HDPoint
+                        link = tmpLink
+                    if tr.extract().find('中文') != -1 and tr.extract().find('HD') != -1:
+                         point = ChineseHDPoint
+
+                else:
+                        link = tr.xpath(".//td[3]//a[2]")[0]
+        if isinstance(link,str) == False:
+            href = link.xpath('.//@href')[0]
+            item['link'] = href.extract()
+            item['number'] = number
+            yield item
+            return
         url = 'https://m.dongxingdi.com/list/'+number+'/1'
         yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseZhongziLink,
-                                 meta={'number': number})
-
-
+                               meta={'number': number})
 
 
 
 # magnet 解析  https://m.dongxingdi.com/list/xx/1
-    def parseZhongziLink(self,response):
+    def parseZhongziLink(self, response):
         item = LinkItem()
         item['link'] = ''
         number = response.meta['number']
         magents = response.xpath("//a/@href")
         item['number'] = number
+        item['domain'] = 'dongxingdi'
         for magent in magents:
             href = magent.extract()
             key = '/info-'
             if href.find(key) != -1:
-                item['link'] = 'magnet:?xt=urn:btih:' +  href.replace(key,'')
+                item['link'] = 'magnet:?xt=urn:btih:' + href.replace(key, '')
                 yield item
                 return
         yield item
+
+    def parseTorrent(self,response):
+        number = response.meta['number']
+        chinise = number + '-c'
+        dls = response.xpath("//div[@class='results']//dl")
+        for dl in dls:
+            if dl.xpath(".//dt")[0].extract().lower().find(chinise.lower()) != -1:
+                tmp = dl.xpath(".//dt//a[@href]")[0].xpath(".//@href")[0].extract()
+                link  = 'magnet:?xt=urn:btih:' + tmp.replace('/', '')
+                item = LinkItem()
+                item['link'] =  link
+                item['number'] = number
+                item['domain'] = 'torrent2'
+                yield item
+                return
+        linkUlr = 'https://u3c3.com/?search=' + number
+        yield  scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
 

@@ -84,15 +84,20 @@ class DBHelper():
         tx.execute(sql, params)
 
     def insertAVLink(self,item):
-        sql = "insert into link(number,link) values(%s,%s)"
+        sql = "insert into link(number,link,domain ) values(%s,%s,%s)"
         # 调用插入的方法
         query = self.dbpool.runInteraction(self.AVLinkConditionalInsert, sql, item)
         # 调用异常处理方法
         query.addErrback(self._handle_error)
 
     def AVLinkConditionalInsert(self,tx,sql,item):
-        params = (item['number'],item['link'])
+        params = (item['number'],item['link'],item['domain'])
         tx.execute(sql, params)
+
+    def getPoint(self,number):
+        return  self.dbpool.runQuery("select point from link where number = '%s'" + number)
+
+
 
 
 

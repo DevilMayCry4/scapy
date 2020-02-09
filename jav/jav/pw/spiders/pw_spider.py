@@ -16,12 +16,14 @@ headers = {'user-agent':'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) 
 ChineseHDPoint = 2
 ChinesePoint = 1.5
 HDPoint = 1.2
+db = DBHelper(True)
+
 
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
         #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
-      # yield scrapy.Request(url='https://www.javbus.com/DOKS-506',headers=headers,callback=self.parse)
+       #yield scrapy.Request(url='https://www.javbus.com/JUC-303',headers=headers,callback=self.parse)
         #解析演员
        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
         #解析列表
@@ -201,9 +203,19 @@ class PWSpider(scrapy.Spider):
                                    if len(v) != 0 and v != ':':
                                        item[key] = v
             number = item['number']
-            linkUlr = 'https://torrentz2.eu/search?f='+number
-            yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseTorrent,meta={'number':number})
-            yield item
+            if db.isExistLink(number) == False:
+                linkUlr = 'https://torrentz2.eu/search?f=' + number
+                yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'},
+                                     callback=self.parseTorrent,
+                                     meta={'number': number})
+                yield item
+            else:
+                print('exist--------')
+                yield item
+
+
+
+
 
 
 
@@ -345,6 +357,11 @@ class PWSpider(scrapy.Spider):
                 return
         yield item
 
+
+
+
+
+
     def parseTorrent(self,response):
         number = response.meta['number']
         chinise = number + '-c'
@@ -360,5 +377,5 @@ class PWSpider(scrapy.Spider):
                 yield item
                 return
         linkUlr = 'https://u3c3.com/?search=' + number
-        yield  scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
+        yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
 

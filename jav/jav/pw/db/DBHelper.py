@@ -8,7 +8,7 @@ from scrapy.utils.project import get_project_settings  #导入seetings配置
 class DBHelper():
     '''这个类也是读取settings中的配置，自行修改代码进行操作'''
 
-    def __init__(self):
+    def __init__(self,query):
         settings = get_project_settings()  #获取settings配置，设置需要的信息
 
         dbparams = dict(
@@ -21,9 +21,13 @@ class DBHelper():
             use_unicode=True,
         )
         #**表示将字典扩展为关键字参数,相当于host=xxx,db=yyy....
-        dbpool = adbapi.ConnectionPool('pymysql', **dbparams)
+        if(query==False):
+            dbpool = adbapi.ConnectionPool('pymysql', **dbparams)
+            self.dbpool = dbpool
+        else:
+            connect = pymysql.connect(host = '127.0.0.1',user = 'root' ,passwd='19900317' ,port= 3306 ,db='pw' ,charset='utf8' )
+            self.cur = connect.cursor()
 
-        self.dbpool = dbpool
 
     def connect(self):
         return self.dbpool
@@ -96,6 +100,15 @@ class DBHelper():
 
     def getPoint(self,number):
         return  self.dbpool.runQuery("select point from link where number = '%s'" + number)
+
+    def isExistLink(self,number):
+        s = ("select   IF( exists ( select * from link where number = '%s'), 1, 0) as result")%number
+        self.cur.execute(s)
+        r = self.cur.fetchall()[0][0]
+        return  r == 1
+
+
+
 
 
 

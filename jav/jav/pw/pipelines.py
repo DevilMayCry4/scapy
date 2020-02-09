@@ -16,7 +16,7 @@ from scrapy.pipelines.images import ImagesPipeline
 from  items import PwItem,StarItem,GenreItem,LinkItem
 
 
-db = DBHelper()
+db = DBHelper(False)
 
 class PwImagePipeline(ImagesPipeline):
 

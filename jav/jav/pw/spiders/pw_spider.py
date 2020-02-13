@@ -22,7 +22,7 @@ db = DBHelper(True)
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
-        #yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
+       # yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
        #yield scrapy.Request(url='https://www.javbus.com/JUC-303',headers=headers,callback=self.parse)
         #解析演员
        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
@@ -111,6 +111,8 @@ class PWSpider(scrapy.Spider):
             a = div.xpath(".//a/@href")
             if len(a) > 0:
               href = a[0].extract()
+              if (db.isExistAV(self.findNumber(href))):
+                  return
               yield scrapy.Request(url=href, headers=headers, callback=self.parse)
         if len(response.xpath("//*[@id='next']")):
               link = response.xpath("//a[@id='next']")
@@ -210,14 +212,11 @@ class PWSpider(scrapy.Spider):
                                      meta={'number': number})
                 yield item
             else:
-                print('exist--------')
+                print('exist-------- ' + number)
                 yield item
 
-
-
-
-
-
+    def findNumber(self,url):
+       return  url.split('/')[-1]
 
 
     def findNextPage(self,response,block,headers):
@@ -279,6 +278,8 @@ class PWSpider(scrapy.Spider):
             a = div.xpath(".//a/@href")
             if len(a) > 0:
                 href = a[0].extract()
+                if (db.isExistAV(self.findNumber(href))):
+                    return
                 yield scrapy.Request(url=href, headers=headers, callback=self.parse)
         if len(response.xpath("//*[@id='next']")):
             link = response.xpath("//a[@id='next']")

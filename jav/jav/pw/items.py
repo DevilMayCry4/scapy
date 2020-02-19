@@ -32,6 +32,9 @@ class PwItem(scrapy.Item):
     seriesName = scrapy.Field()
 
     starName = scrapy.Field()
+    chinese = scrapy.Field()
+
+    parseStar = scrapy.Field()
 
 
 class StarItem(scrapy.Item):

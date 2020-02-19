@@ -22,15 +22,20 @@ db = DBHelper(True)
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
+        # keys = self.getConfig('star.json')
+        # for key in keys:
+        #     url =  'https://www.javbus.com/star/' + key
+        #     yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'},
+        #                          callback=self.parseStar)
+
        # yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
-       #yield scrapy.Request(url='https://www.javbus.com/JUC-303',headers=headers,callback=self.parse)
+       #yield scrapy.Request(url='https://www.javbus.com/JRZD-342',headers=headers,callback=self.parse,meta={'chinese':'1','parseStar':'mga'})
         #解析演员
-       yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
         #解析列表
         #yield scrapy.Request(url='https://www.javbus.com', headers=headers, callback=self.parseContent)
-        #yield  scrapy.Request(url='https://www.javbus.com/star/tyv', headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar)
-
-        #yield scrapy.Request(url='https://torrentz2.eu/search?f=NDRA-067', headers=headers, callback=self.parseTorrent ,meta={'number': 'NDRA-067'})
+       #yield  scrapy.Request(url='https://www.javbus.com/star/mga', headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar,meta={'star':'mga'})
+#yield scrapy.Request(url='https://torrentz2.eu/search?f=NDRA-067', headers=headers, callback=self.parseTorrent ,meta={'number': 'NDRA-067'})
 
     def parseGenre(self,response):
         list = response.xpath(".//div[@class='row genre-box']")
@@ -106,19 +111,24 @@ class PWSpider(scrapy.Spider):
             yield  item
 
         waterfall = response.xpath('//*[@id="waterfall"]')[1]
-        list = waterfall.xpath('./div')
+        list = waterfall.xpath(".//*[@class='movie-box']")
         for div in list:
-            a = div.xpath(".//a/@href")
-            if len(a) > 0:
-              href = a[0].extract()
+            photoInfo = div.xpath(".//*[@class='photo-info']")[0]
+            href =  div.xpath(".//@href")[0].extract()
+            chinese = '0'
+            if photoInfo.extract().find('字幕') != -1:
+                chinese = '1'
+            if len(href) > 0:
               if (db.isExistAV(self.findNumber(href))):
-                  return
-              yield scrapy.Request(url=href, headers=headers, callback=self.parse)
+                   continue
+              yield scrapy.Request(url=href, headers=headers, callback=self.parse,meta={'chinese':chinese,'parseStar':code})
+
+
         if len(response.xpath("//*[@id='next']")):
               link = response.xpath("//a[@id='next']")
               if len(link) > 0:
                  url = response.urljoin(link[0].xpath("./@href")[0].extract())
-                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar)
+                 yield scrapy.Request(url=url, headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar,meta=response.meta)
         else:
             ul = response.xpath(".//ul[@class='pagination pagination-lg']")
             findActive = False
@@ -133,7 +143,7 @@ class PWSpider(scrapy.Spider):
                     elif findActive:
                         pageUlr = response.urljoin(li.xpath("./a/@href")[0].extract())
                         yield scrapy.Request(url=pageUlr, headers=headers, cookies={'existmag': 'mag'},
-                                             callback=self.parseStar)
+                                             callback=self.parseStar,meta=response.meta)
 
     def parse(self, response):
         containers = response.xpath("//div[@class='container']")
@@ -141,6 +151,8 @@ class PWSpider(scrapy.Spider):
         if len(containers) != 0:
             container = containers[0]
             item = PwItem()
+            item['parseStar'] = response.meta['parseStar']
+            item['chinese'] = response.meta['chinese']
             item['name'] = container.xpath(".//h3[1]/text()")[0].extract()
             imageUrl = container.xpath(".//div[contains(@class, 'screencap')][1]/a/@href").extract()[0]
             item['imageUrl'] = imageUrl
@@ -206,9 +218,9 @@ class PWSpider(scrapy.Spider):
                                        item[key] = v
             number = item['number']
             if db.isExistLink(number) == False:
-                linkUlr = 'https://torrentz2.eu/search?f=' + number
+                linkUlr = 'https://www.torrentkitty.tv/search/' + number
                 yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'},
-                                     callback=self.parseTorrent,
+                                     callback=self.parseTorrentKity,
                                      meta={'number': number})
                 yield item
             else:
@@ -273,14 +285,21 @@ class PWSpider(scrapy.Spider):
             return
         PageCount += 1
         waterfall = response.xpath('//*[@id="waterfall"]')[1]
-        list = waterfall.xpath('./div')
+        list = waterfall.xpath(".//*[@class='movie-box']")
         for div in list:
-            a = div.xpath(".//a/@href")
-            if len(a) > 0:
-                href = a[0].extract()
+            photoInfo = div.xpath(".//*[@class='photo-info']")
+            href = div.xpath(".//@href")[0].extract()
+            chinese = '0'
+            l = photoInfo.extract()
+            if (isinstance(l,str)) == False:
+                l = photoInfo.extract()[0]
+            if l.find('字幕') != -1:
+                chinese = '1'
+            if len(href) > 0:
                 if (db.isExistAV(self.findNumber(href))):
-                    return
-                yield scrapy.Request(url=href, headers=headers, callback=self.parse)
+                    continue
+                yield scrapy.Request(url=href, headers=headers, callback=self.parse, meta={'chinese': chinese})
+
         if len(response.xpath("//*[@id='next']")):
             link = response.xpath("//a[@id='next']")
             if len(link) > 0:
@@ -368,7 +387,7 @@ class PWSpider(scrapy.Spider):
         chinise = number + '-c'
         dls = response.xpath("//div[@class='results']//dl")
         for dl in dls:
-            if dl.xpath(".//dt")[0].extract().lower().find(chinise.lower()) != -1:
+            if dl.xpath(".//dt")[0].extract().lower().find(chinise.lower()) != -1 or dl.xpath(".//dt")[0].extract().find('中文') != -1   or dl.xpath(".//dt")[0].extract().lower().find('_c') != -1:
                 tmp = dl.xpath(".//dt//a[@href]")[0].xpath(".//@href")[0].extract()
                 link  = 'magnet:?xt=urn:btih:' + tmp.replace('/', '')
                 item = LinkItem()
@@ -379,4 +398,40 @@ class PWSpider(scrapy.Spider):
                 return
         linkUlr = 'https://u3c3.com/?search=' + number
         yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
+
+
+    def parseTorrentKity(self,response):
+        number = response.meta["number"]
+        if response.status != 403:
+            tbody = response.xpath("//table[@id='archiveResult']//tbody")
+            trs = response.xpath("//tr")
+            for tr in trs:
+                names = tr.xpath(".//td[@class='name']/text()")
+                if len(names) == 1:
+                    name = names[0].extract()
+                    if name != 'Torrent Description' and self.isChineseString(name,number) and name.find('No result') == -1:
+                        tmp = tr.xpath(".//td[@class='action']")[0].xpath(".//@href")[0].extract()
+                        link = 'magnet:?xt=urn:btih:' + tmp.replace('/information/', '')
+                        item = LinkItem()
+                        item['link'] = link
+                        item['number'] = number
+                        item['domain'] = 'torrentkitty'
+                        yield item
+                        return
+
+
+        linkUlr = 'https://torrentz2.eu/search?f=' + number
+        yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'},
+                             callback=self.parseTorrent,
+                             meta={'number': number})
+
+
+    def isChineseString(self,str,number):
+        key = number.replace('-','')
+        searchString = str.replace('-','')
+        searchString = searchString.replace(key,'').lower()
+        return searchString.find('c') !=  -1 or searchString.find('中文') != -1 or searchString.find('字幕') != -1 or searchString.find('r') !=  -1
+
+
+
 

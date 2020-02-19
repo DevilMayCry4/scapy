@@ -36,7 +36,7 @@ class DBHelper():
     def insert(self, item):
         sql = "insert into av(name,imageUrl,genreName," \
               "genre,star,starName," \
-              "number,studio,series,seriesName,image,time,date) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+              "number,studio,series,seriesName,image,time,date,chinese) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         #调用插入的方法
         query = self.dbpool.runInteraction(self._conditional_insert, sql, item)
         #调用异常处理方法
@@ -48,7 +48,7 @@ class DBHelper():
     def _conditional_insert(self, tx, sql, item):
         params = (item["name"], item['imageUrl'], item['genreName'],
                   item['genre'], item['star'], item['starName'],
-                  item['number'],item['studio'],item['series'],item['seriesName'],item['image'],item['time'],item['date'])
+                  item['number'],item['studio'],item['series'],item['seriesName'],item['image'],item['time'],item['date'],item['chinese'])
         tx.execute(sql, params)
 
 

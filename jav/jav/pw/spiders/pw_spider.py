@@ -55,7 +55,7 @@ class PWSpider(scrapy.Spider):
 
     def parseAtress(self,response):
         global PageCount
-        if PageCount >= 5600:
+        if PageCount >= 500:
             return
         PageCount = PageCount + 1
         list = response.xpath('//*[@id="waterfall"]')[0].xpath('./div')

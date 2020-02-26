@@ -22,16 +22,16 @@ db = DBHelper(True)
 class PWSpider(scrapy.Spider):
     name = "pw"
     def start_requests(self):
-        # keys = self.getConfig('star.json')
-        # for key in keys:
-        #     url =  'https://www.javbus.com/star/' + key
-        #     yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'},
-        #                          callback=self.parseStar)
+        keys = self.getConfig('star.json')
+        for key in keys:
+            url =  'https://www.javbus.com/star/' + key
+            yield scrapy.Request(url=url, headers=headers, cookies={'existmag': 'mag'},
+                                 callback=self.parseStar)
 
        # yield scrapy.Request(url='https://www.javbus.com/genre', headers=headers, callback=self.parseGenre)
        #yield scrapy.Request(url='https://www.javbus.com/JRZD-342',headers=headers,callback=self.parse,meta={'chinese':'1','parseStar':'mga'})
         #解析演员
-        yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
+        #yield scrapy.Request(url='https://www.javbus.com/actresses', headers=headers, callback=self.parseAtress)
         #解析列表
         #yield scrapy.Request(url='https://www.javbus.com', headers=headers, callback=self.parseContent)
        #yield  scrapy.Request(url='https://www.javbus.com/star/mga', headers=headers,cookies={'existmag':'mag'}, callback=self.parseStar,meta={'star':'mga'})
@@ -274,7 +274,8 @@ class PWSpider(scrapy.Spider):
         path = os.path.join(dir, 'config/' + name)
         item = None
         with open(path, 'r',encoding='utf-8') as f:
-            item = json.loads(f.read())
+            rd = f.read()
+            item = json.loads(rd)
         return item
 
 

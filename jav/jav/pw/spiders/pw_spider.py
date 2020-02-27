@@ -376,7 +376,6 @@ class PWSpider(scrapy.Spider):
                 item['link'] = 'magnet:?xt=urn:btih:' + href.replace(key, '')
                 yield item
                 return
-        yield item
 
 
 

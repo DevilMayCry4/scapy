@@ -108,7 +108,7 @@ class DBHelper():
         return  r == 1
 
     def isExistAV(self,number):
-        s = ("select   IF( exists ( select * from  av a inner join link b   where a.number = b.number and a.number =  '%s'), 1, 0) as result") % number
+        s = ("select   IF( exists ( select * from  av a inner join link b   where a.number = b.number and a.number =  '%s' and b.link != '' ), 1, 0) as result") % number
         self.cur.execute(s)
         r = self.cur.fetchall()[0][0]
         result = r == 1

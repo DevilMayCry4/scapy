@@ -385,24 +385,25 @@ class PWSpider(scrapy.Spider):
     def parseTorrent(self,response):
         number = response.meta['number']
         chinise = number + '-c'
-        dls = response.xpath("//div[@class='results']//dl")
-        for dl in dls:
-            if dl.xpath(".//dt")[0].extract().lower().find(chinise.lower()) != -1 or dl.xpath(".//dt")[0].extract().find('中文') != -1   or dl.xpath(".//dt")[0].extract().lower().find('_c') != -1:
-                tmp = dl.xpath(".//dt//a[@href]")[0].xpath(".//@href")[0].extract()
-                link  = 'magnet:?xt=urn:btih:' + tmp.replace('/', '')
-                item = LinkItem()
-                item['link'] =  link
-                item['number'] = number
-                item['domain'] = 'torrent2'
-                yield item
-                return
+        if response.status != 403 and response.status != 503:
+            dls = response.xpath("//div[@class='results']//dl")
+            for dl in dls:
+                if dl.xpath(".//dt")[0].extract().lower().find(chinise.lower()) != -1 or dl.xpath(".//dt")[0].extract().find('中文') != -1   or dl.xpath(".//dt")[0].extract().lower().find('_c') != -1:
+                    tmp = dl.xpath(".//dt//a[@href]")[0].xpath(".//@href")[0].extract()
+                    link  = 'magnet:?xt=urn:btih:' + tmp.replace('/', '')
+                    item = LinkItem()
+                    item['link'] =  link
+                    item['number'] = number
+                    item['domain'] = 'torrent2'
+                    yield item
+                    return
         linkUlr = 'https://u3c3.com/?search=' + number
         yield scrapy.Request(url=linkUlr, headers=headers, cookies={'existmag': 'mag'}, callback=self.parseLink,meta={'number':number})
 
 
     def parseTorrentKity(self,response):
         number = response.meta["number"]
-        if response.status != 403:
+        if response.status != 403 and response.status != 503:
             tbody = response.xpath("//table[@id='archiveResult']//tbody")
             trs = response.xpath("//tr")
             for tr in trs:

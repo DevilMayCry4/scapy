@@ -6,7 +6,7 @@
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
+import random
 
 class PwSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -16,7 +16,7 @@ class PwSpiderMiddleware(object):
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
-        s = cls()
+        s = cls(user_agent=crawler.settings.get('USER_AGENTS_LIST'))
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
@@ -49,7 +49,9 @@ class PwSpiderMiddleware(object):
         # that it doesn’t have a response associated.
 
         # Must return only requests (not items).
+        agent = random.choice(self.user_agent)
         for r in start_requests:
+            r.headers['User-Agent'] = agent
             yield r
 
     def spider_opened(self, spider):

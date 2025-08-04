@@ -25,7 +25,7 @@ class DBHelper():
             dbpool = adbapi.ConnectionPool('pymysql', **dbparams)
             self.dbpool = dbpool
         else:
-            connect = pymysql.connect(host = '127.0.0.1',user = 'root' ,passwd='19900317' ,port= 3306 ,db='pw' ,charset='utf8' )
+            connect = pymysql.connect(host = '127.0.0.1',user = 'root' ,passwd='' ,port= 3306 ,db='pw' ,charset='utf8' )
             self.cur = connect.cursor()
 
 
